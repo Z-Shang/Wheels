@@ -49,17 +49,21 @@
           (cons (cons (car a) (car b)) (join-two-lists (cdr a) (cdr b))))))
 
 (defun logic-to-string (l)
-  (cond
-    ((equal l 't)
-     "T")
-    ((equal l 'f)
-     "F")
-    ((equal 'lor (car l))
-     (format nil "~@{~A ~^+ ~}" (mapcar #'logic-to-string (cdr l))))
-    ((equal 'land (car l))
-     (format nil "~@{~A ~^* ~}" (mapcar #'logic-to-string (cdr l))))
-    ((equal 'lnot (car l))
-     (format nil "(~A)'" (logic-to-string (cadr l))))))
+  (if (listp l)
+      (cond
+        ((equal 'lor (car l))
+         (format nil "~{~A~^+~}" (mapcar #'logic-to-string (cdr l))))
+        ((equal 'land (car l))
+         (format nil "~{~A~^*~}" (mapcar #'logic-to-string (cdr l))))
+        ((equal 'lnot (car l))
+         (format nil "(~A)'" (logic-to-string (cadr l)))))
+      (cond
+        ((equal l 't)
+         "T")
+        ((equal l 'f)
+         "F")
+        (t
+         (symbol-name l)))))
 
 (defun lookup (sym env)
   (if (null env)
@@ -91,10 +95,15 @@
                 (loop for l in alst
                    collect (list (count-minterm l)
                                  l
-                                 (mapcar #'(lambda (x) (eval-logic (join-two-lists args l)
-                                                              x)) exps)))
+                                 (mapcar #'(lambda (x)
+                                             (eval-logic
+                                              (join-two-lists args l)
+                                              x))
+                                         exps)))
                 #'(lambda (x y) (< (car x) (car y))))))
-    (format *standard-output* "Min ~{~A~T~T~T~}=>~T~T~T~{~A~T~T~T~}~%" args exps)
+    (format *standard-output* "Min ~{~A~T~T~T~}=>~T~T~T~{~A~T~T~T~}~%"
+            args
+            (mapcar #'logic-to-string exps))
     (loop for l in slst
        do (format *standard-output* "~A~T~T~T~{~A~T~T~T~}=>~T~T~T~{~A~T~T~T~}~%"
                   (first l)
