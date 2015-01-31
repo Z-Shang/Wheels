@@ -1,5 +1,9 @@
 (defpackage #:cl-wheels-logic
-  (:use :cl))
+  (:use :cl)
+  (:export :l-and
+           :l-or
+           :l-not
+           :gen-truth-table))
 
 (in-package #:cl-wheels-logic)
 
@@ -82,3 +86,5 @@
                   l
                   (mapcar #'(lambda (x) (eval-logic (join-two-lists args l)
                                                x)) exps)))))
+
+(provide 'cl-wheels-logic)
