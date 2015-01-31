@@ -89,7 +89,7 @@
                         0))))
     (reduce (lambda (x y) (+ (* x 2) y)) blst)))
 
-(defun gen-truth-table (args exps)
+(defun gen-truth-table (args exps &optional (f nil))
   (let* ((alst (apply #'cartesian-product (make-list (length args) :initial-element '(t f))))
          (slst (sort
                 (loop for l in alst
@@ -108,6 +108,30 @@
        do (format *standard-output* "~A~T~T~T~{~A~T~T~T~}=>~T~T~T~{~A~T~T~T~}~%"
                   (first l)
                   (second l)
-                  (third l)))))
+                  (third l)))
+    (if f
+        (let ((flst
+               (sort
+                (loop for l in alst
+                   collect (list (count-minterm l)
+                                 l
+                                 (eval-logic
+                                  (join-two-lists args l) f)))
+                #'(lambda (x y) (< (car x) (car y))))))
+          (format *standard-output* "~%============~%")
+          (format *standard-output* "Min ~{~A~T~T~T~}=>~T~T~T~A~T~T~T~%"
+                  args
+                  (logic-to-string f))
+          (loop for l in flst
+             do (format *standard-output*
+                        "~A~T~T~T~{~A~T~T~T~}=>~T~T~T~A~T~T~T~%"
+                        (first l)
+                        (second l)
+                        (third l)))
+          (format *standard-output* "f(~{~A~^, ~}) = Sum(~{~A~^, ~})~%"
+                  args
+                  (loop for l in flst
+                     when (equal 't (third l))
+                     collect (first l)))))))
 
 (provide 'cl-wheels-logic)
