@@ -1,8 +1,8 @@
 (defpackage #:cl-wheels-logic
   (:use :cl)
-  (:export :l-and
-           :l-or
-           :l-not
+  (:export :land
+           :lor
+           :lnot
            :gen-truth-table))
 
 (in-package #:cl-wheels-logic)
@@ -23,19 +23,19 @@
 (defun cartesian-product (&rest lsts)
   (reduce 'mix-two-lists lsts :initial-value nil :from-end t))
 
-(defun l-not (sym)
+(defun lnot (sym)
   (cond
     ((equal sym 't)
      'f)
     ((equal sym 'f)
      't)))
 
-(defun l-and (&rest syms)
+(defun land (&rest syms)
   (if (member 'f syms)
       'f
       't))
 
-(defun l-or (&rest syms)
+(defun lor (&rest syms)
   (if (member 't syms)
       't
       'f))
@@ -54,11 +54,11 @@
      "T")
     ((equal l 'f)
      "F")
-    ((equal 'l-or (car l))
+    ((equal 'lor (car l))
      (format nil "~@{~A ~^+ ~}" (mapcar #'logic-to-string (cdr l))))
-    ((equal 'l-and (car l))
+    ((equal 'land (car l))
      (format nil "~@{~A ~^* ~}" (mapcar #'logic-to-string (cdr l))))
-    ((equal 'l-not (car l))
+    ((equal 'lnot (car l))
      (format nil "(~A)'" (logic-to-string (cadr l))))))
 
 (defun lookup (sym env)
@@ -69,7 +69,6 @@
           (lookup sym (cdr env)))))
 
 (defun eval-logic (arglst exp)
-;  (format *standard-output* "~%~A~%~A~%" arglst exp)
   (if (atom exp)
       (lookup exp arglst)
       (let ((vlst
@@ -78,13 +77,28 @@
             (f (car exp)))
         (apply f vlst))))
 
+(defun count-minterm (lst)
+  (let ((blst
+         (loop for a in lst
+            collect (if (equal a 't)
+                        1
+                        0))))
+    (reduce (lambda (x y) (+ (* x 2) y)) blst)))
+
 (defun gen-truth-table (args exps)
-  (let ((alst (apply #'cartesian-product (make-list (length args) :initial-element '(t f)))))
-    (format *standard-output* "~{~A~T~T~T~}=>~T~T~T~{~A~T~T~T~}~%" args exps)
-    (loop for l in alst
-       do (format *standard-output* "~{~A~T~T~T~}=>~T~T~T~{~A~T~T~T~}~%"
-                  l
-                  (mapcar #'(lambda (x) (eval-logic (join-two-lists args l)
-                                               x)) exps)))))
+  (let* ((alst (apply #'cartesian-product (make-list (length args) :initial-element '(t f))))
+         (slst (sort
+                (loop for l in alst
+                   collect (list (count-minterm l)
+                                 l
+                                 (mapcar #'(lambda (x) (eval-logic (join-two-lists args l)
+                                                              x)) exps)))
+                #'(lambda (x y) (< (car x) (car y))))))
+    (format *standard-output* "Min ~{~A~T~T~T~}=>~T~T~T~{~A~T~T~T~}~%" args exps)
+    (loop for l in slst
+       do (format *standard-output* "~A~T~T~T~{~A~T~T~T~}=>~T~T~T~{~A~T~T~T~}~%"
+                  (first l)
+                  (second l)
+                  (third l)))))
 
 (provide 'cl-wheels-logic)
