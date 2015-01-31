@@ -10,9 +10,7 @@ Just some random tools
 
 e.g.:
 
-(gen-truth-table '(x y z) '( (l-and x y) (l-or y z) (l-and (l-not x) z) ))
+![eg1](1.png)
 
 ##TODO:
-- Make the output better
-- Add Minterm
 - From Algebraic to truth table
